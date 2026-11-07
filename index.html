@@ -1,0 +1,325 @@
+<title>S.status</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#080808">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="S.status">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap">
+<style>
+/* Макет: одна колонка, как экран приложения. Три шага сверху вниз: видео, вариант, отправка. Глухой графит и один приглушённый песочный акцент. */
+:root {
+  --bg: #080808;
+  --surface: #121212;
+  --surface-2: #1a1814;
+  --line: #2c2820;
+  --fg: #f2ede4;
+  --muted: #a39a89;
+  --accent: #e3b45c;
+  --accent-ink: #1a1200;
+  --ok: #2fe06f;
+  --warn: #e3b45c;
+  --font: "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f6f3ec; --surface: #ffffff; --surface-2: #f1ede3; --line: #ddd5c3;
+    --fg: #1b1a16; --muted: #6b6454; --accent: #8f6414; --accent-ink: #ffffff;
+    --ok: #12803f; --warn: #8f6414; color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f6f3ec; --surface: #ffffff; --surface-2: #f1ede3; --line: #ddd5c3;
+  --fg: #1b1a16; --muted: #6b6454; --accent: #8f6414; --accent-ink: #ffffff;
+  --ok: #12803f; --warn: #8f6414; color-scheme: light;
+}
+html, body { height: auto; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 16px; line-height: 1.45;
+  padding-block: 20px 36px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.app { max-width: 460px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: flex; align-items: center; gap: 12px; }
+.mark { width: 48px; height: 48px; border-radius: 11px; display: block; flex: none; }
+h1 { font-size: 22px; line-height: 1.1; margin: 0; font-weight: 700; letter-spacing: -.01em; }
+.sub { color: var(--muted); font-size: 14px; margin: 2px 0 0; }
+.badge { margin-left: auto; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 12px; }
+.step { display: flex; align-items: baseline; gap: 10px; }
+.step b { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-variant-numeric: tabular-nums; }
+.step h2 { margin: 0; font-size: 17px; font-weight: 600; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.pick { display: grid; gap: 4px; justify-items: center; text-align: center; padding: 26px 14px; border: 1.5px dashed var(--line); border-radius: 12px; background: var(--surface-2); cursor: pointer; }
+.pick strong { font-size: 17px; font-weight: 600; }
+.pick span { color: var(--muted); font-size: 14px; }
+.pick:hover { border-color: var(--accent); }
+#video:focus-visible + .pick, button:focus-visible, .opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.file { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.file .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.file .size { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; flex: none; }
+.file button { margin-left: auto; flex: none; }
+.opts { display: grid; gap: 10px; }
+.opt { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: start; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); cursor: pointer; }
+.opt input { margin-top: 3px; accent-color: var(--accent); }
+.opt strong { font-weight: 600; }
+.opt small { grid-column: 2; color: var(--muted); font-size: 14px; }
+.opt:has(input:checked) { border-color: var(--accent); }
+.tag { font-size: 12px; font-weight: 600; color: var(--warn); }
+button { font: inherit; cursor: pointer; }
+.btn { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 12px; padding: 15px 18px; font-weight: 600; font-size: 17px; width: 100%; }
+.btn:disabled { opacity: .45; cursor: default; }
+.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 10px; padding: 7px 12px; font-size: 14px; }
+.note { color: var(--muted); font-size: 14px; margin: 0; }
+.code { font-size: 30px; font-weight: 700; letter-spacing: .12em; text-align: center; padding: 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); font-variant-numeric: tabular-nums; user-select: all; }
+.tariffs { display: grid; gap: 10px; }
+.tariff { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+.tariff span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bar { height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--line); }
+.bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--ok), var(--accent)); transition: width .9s ease; }
+.done { display: grid; gap: 10px; }
+.done h3 { margin: 0; font-size: 19px; color: var(--ok); }
+.path { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-weight: 600; }
+.path span { padding: 6px 10px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); font-size: 14px; }
+.mock { border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 8px; }
+.mock .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.mock .seg button { background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 13px; }
+.mock .seg button[aria-pressed="true"] { color: var(--fg); border-color: var(--accent); }
+.status { font-size: 14px; color: var(--muted); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.status b { color: var(--fg); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+
+.btn.alt { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+.err { color: var(--warn); font-size: 14px; margin: 0; }
+.linkbtn { display: block; text-align: center; text-decoration: none; }
+[hidden] { display: none !important; }
+.btn { box-sizing: border-box; }
+.hint { font-size: 13px; color: var(--muted); margin: 0; }
+</style>
+<div class="app">
+  <header>
+    <img class="mark" alt="" src="icon-192.png">
+    <div>
+      <h1>S.status</h1>
+      <p class="sub">Видео для статуса WhatsApp без потери качества</p>
+    </div>
+  </header>
+
+  <div class="status" id="planLine" hidden></div>
+  <p class="err" id="globalErr" hidden></p>
+
+  <section class="card" id="cLink" hidden aria-labelledby="tl">
+    <div class="step"><b>1</b><h2 id="tl">Привяжите WhatsApp</h2></div>
+    <div id="linkStart" style="display:grid;gap:12px">
+      <p class="note">Один раз свяжем сайт с вашим номером: вы отправите боту короткий код. Готовое видео бот пришлёт вам в WhatsApp.</p>
+      <button class="btn" type="button" id="btnStart">Получить код</button>
+    </div>
+    <div id="linkCode" style="display:grid;gap:12px" hidden>
+      <div class="code" id="codeText">S000000</div>
+      <a class="btn linkbtn" id="waLink" href="#" target="_blank" rel="noopener">Открыть WhatsApp</a>
+      <p class="note">В WhatsApp нажмите «Отправить», затем вернитесь сюда. Страница сама поймёт, что всё получилось. Код действует 10 минут.</p>
+      <button class="ghost" type="button" id="btnNew">Получить новый код</button>
+    </div>
+  </section>
+
+  <section class="card" id="cFile" hidden aria-labelledby="t1">
+    <div class="step"><b>1</b><h2 id="t1">Видео</h2></div>
+    <div id="pickBox">
+      <input class="vh" type="file" id="video" accept="video/*">
+      <label class="pick" for="video">
+        <strong>Выбрать из галереи</strong>
+        <span>Откроется галерея телефона</span>
+      </label>
+    </div>
+    <div class="file" id="fileBox" hidden>
+      <span class="name" id="fileName"></span>
+      <span class="size" id="fileSize"></span>
+      <button class="ghost" type="button" id="reset">Другое</button>
+    </div>
+  </section>
+
+  <section class="card" id="cVar" hidden aria-labelledby="t2">
+    <div class="step"><b>2</b><h2 id="t2">Как обработать</h2></div>
+    <div class="opts" id="optsFree">
+      <label class="opt">
+        <input type="radio" name="variant" value="wm" checked>
+        <strong>С водяным знаком</strong>
+        <small>Бесплатно, 5 видео в день.</small>
+      </label>
+      <label class="opt">
+        <input type="radio" name="variant" value="nowm">
+        <strong>Без водяного знака <span class="tag">по подписке</span></strong>
+        <small>Быстрее и вне очереди.</small>
+      </label>
+    </div>
+    <p class="note" id="optsPaid" hidden>Видео будет без водяного знака: у вас активна подписка.</p>
+    <div class="tariffs" id="tariffs" hidden>
+      <div class="tariff"><span>Стандарт · до 100 видео в месяц</span><span>300 ₽/мес</span></div>
+      <div class="tariff"><span>Безлимит · без ограничений</span><span>600 ₽/мес</span></div>
+      <a class="btn alt linkbtn" id="subLink" href="#" target="_blank" rel="noopener">Узнать про подписку в WhatsApp</a>
+    </div>
+  </section>
+
+  <section class="card" id="cSend" hidden aria-labelledby="t3">
+    <div class="step"><b>3</b><h2 id="t3">Отправка</h2></div>
+    <div id="sendBox" style="display:grid;gap:12px">
+      <button class="btn" type="button" id="send" disabled>Обработать и отправить в WhatsApp</button>
+      <p class="note" id="hint">Сначала выберите видео.</p>
+    </div>
+    <div id="progBox" style="display:grid;gap:10px" hidden aria-live="polite">
+      <div class="bar"><i id="fill"></i></div>
+      <p class="note" id="stage"></p>
+    </div>
+    <div class="done" id="doneBox" hidden>
+      <h3>Видео принято</h3>
+      <p class="note">Бот обработает его и пришлёт в WhatsApp, обычно за несколько минут. Когда оно придёт:</p>
+      <div class="path"><span>Нажмите на видео</span> → <span>Переслать</span> → <span>Мой статус</span></div>
+      <p class="note">Так качество сохраняется. Если выложить видео из галереи напрямую, WhatsApp его пережмёт.</p>
+      <button class="ghost" type="button" id="again">Ещё одно видео</button>
+    </div>
+    <p class="err" id="sendErr" hidden></p>
+  </section>
+
+  <p class="hint" id="foot" hidden></p>
+</div>
+
+<script>
+(function () {
+  var API = 'https://89-125-24-215.sslip.io/s/api';
+  var BOT = '79640698388';
+  var $ = function (s) { return document.querySelector(s); };
+  var S = { token: '', linked: false, plan: 'free', canSend: true, phone: '', file: null, busy: false, pollT: 0, codeExp: 0 };
+
+  function lsGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function lsSet(k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {} }
+  function fmt(b) { return b > 1048576 ? (b / 1048576).toFixed(1) + ' МБ' : Math.max(1, Math.round(b / 1024)) + ' КБ'; }
+  function variant() { var r = document.querySelector('input[name="variant"]:checked'); return r ? r.value : 'wm'; }
+  function show(sel, on) { $(sel).hidden = !on; }
+  function gerr(t) { $('#globalErr').textContent = t || ''; show('#globalErr', !!t); }
+
+  function api(method, path, opts) {
+    return fetch(API + path, { method: method }).then(function (r) { return r.json().catch(function () { return { ok: false }; }); });
+  }
+
+  function render() {
+    var paid = S.plan !== 'free';
+    show('#cLink', !S.linked);
+    show('#cFile', S.linked);
+    show('#cVar', S.linked);
+    show('#cSend', S.linked);
+    var pl = $('#planLine');
+    if (S.linked) {
+      pl.innerHTML = '<span>WhatsApp ' + S.phone + '</span><b>' + (paid ? 'Подписка активна' : 'Без подписки') + '</b>';
+      show('#planLine', true);
+    } else show('#planLine', false);
+    show('#optsFree', !paid);
+    show('#optsPaid', paid);
+    show('#tariffs', !paid && variant() === 'nowm');
+    $('#subLink').href = 'https://wa.me/' + BOT + '?text=2';
+    $('#pickBox').hidden = !!S.file;
+    $('#fileBox').hidden = !S.file;
+    if (S.file) { $('#fileName').textContent = S.file.name; $('#fileSize').textContent = fmt(S.file.size); }
+    var blocked = !S.canSend;
+    var needSub = !paid && variant() === 'nowm';
+    $('#send').disabled = !S.file || S.busy || blocked || needSub;
+    $('#hint').textContent = !S.file ? 'Сначала выберите видео.'
+      : blocked ? 'Лимит исчерпан. Попробуйте позже или оформите подписку.'
+      : needSub ? 'Для этого варианта нужна подписка.'
+      : 'Готовое видео придёт в ваш WhatsApp.';
+  }
+
+  function applyStatus(d) {
+    S.linked = !!d.linked;
+    if (d.linked) { S.plan = d.plan || 'free'; S.canSend = d.canSend !== false; S.phone = d.phone || ''; }
+  }
+
+  function checkStatus() {
+    if (!S.token) return Promise.resolve();
+    return api('GET', '/status?token=' + S.token).then(function (d) {
+      if (!d.ok) throw new Error('bad');
+      applyStatus(d);
+    });
+  }
+
+  function stopPoll() { if (S.pollT) { clearInterval(S.pollT); S.pollT = 0; } }
+  function startPoll() {
+    stopPoll();
+    S.pollT = setInterval(function () {
+      if (Date.now() > S.codeExp) { stopPoll(); $('#codeText').textContent = 'Код устарел'; return; }
+      checkStatus().then(function () { if (S.linked) { stopPoll(); gerr(''); render(); } }).catch(function () {});
+    }, 3000);
+  }
+
+  function newCode() {
+    gerr('');
+    $('#btnStart').disabled = true;
+    api('POST', '/start').then(function (d) {
+      $('#btnStart').disabled = false;
+      if (!d.ok) { gerr(d.error === 'too_many' ? 'Слишком много попыток. Попробуйте через час.' : 'Сервис занят. Попробуйте чуть позже.'); return; }
+      S.token = d.token; lsSet('ss_token', d.token);
+      S.codeExp = Date.now() + 590000;
+      $('#codeText').textContent = d.code;
+      $('#waLink').href = d.wa || ('https://wa.me/' + BOT + '?text=' + encodeURIComponent(d.code));
+      show('#linkStart', false); show('#linkCode', true);
+      startPoll();
+    }).catch(function () { $('#btnStart').disabled = false; gerr('Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.'); });
+  }
+
+  var ERR = {
+    not_linked: 'WhatsApp не привязан. Привяжите его заново.',
+    limit: 'Лимит исчерпан. Попробуйте позже или оформите подписку.',
+    too_fast: 'Слишком часто. Подождите 15 секунд и повторите.',
+    size: 'Файл слишком большой.',
+    disk: 'Сервер сейчас перегружен. Попробуйте позже.',
+    broken: 'Загрузка прервалась. Попробуйте ещё раз.'
+  };
+
+  function upload() {
+    var f = S.file; if (!f) return;
+    $('#sendErr').hidden = true;
+    S.busy = true; render();
+    show('#sendBox', false); show('#progBox', true);
+    $('#fill').style.width = '0'; $('#stage').textContent = 'Загружаем видео… 0%';
+    var x = new XMLHttpRequest();
+    x.open('POST', API + '/upload?token=' + S.token);
+    x.setRequestHeader('x-filename', encodeURIComponent(f.name));
+    x.upload.onprogress = function (e) {
+      if (!e.lengthComputable) return;
+      var p = Math.round(e.loaded / e.total * 100);
+      $('#fill').style.width = p + '%'; $('#stage').textContent = 'Загружаем видео… ' + p + '%';
+    };
+    function fail(msg) {
+      S.busy = false; show('#progBox', false); show('#sendBox', true);
+      $('#sendErr').textContent = msg; $('#sendErr').hidden = false; render();
+    }
+    x.onerror = function () { fail('Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.'); };
+    x.onload = function () {
+      var d = {}; try { d = JSON.parse(x.responseText); } catch (e) {}
+      if (x.status === 200 && d.ok) { S.busy = false; show('#progBox', false); show('#doneBox', true); render(); return; }
+      if (d.error === 'not_linked') { S.linked = false; S.token = ''; lsSet('ss_token', ''); S.file = null; render(); gerr(ERR.not_linked); return; }
+      fail(ERR[d.error] || 'Не получилось отправить. Попробуйте ещё раз.');
+    };
+    x.send(f);
+  }
+
+  $('#btnStart').addEventListener('click', newCode);
+  $('#btnNew').addEventListener('click', newCode);
+  $('#video').addEventListener('change', function () { var i = this; if (i.files && i.files[0]) { S.file = i.files[0]; $('#sendErr').hidden = true; render(); } });
+  $('#reset').addEventListener('click', function () { S.file = null; $('#video').value = ''; render(); });
+  document.querySelectorAll('input[name="variant"]').forEach(function (r) { r.addEventListener('change', render); });
+  $('#send').addEventListener('click', upload);
+  $('#again').addEventListener('click', function () { S.file = null; $('#video').value = ''; show('#doneBox', false); show('#sendBox', true); checkStatus().catch(function () {}).then(render); });
+
+  S.token = lsGet('ss_token');
+  render();
+  if (S.token) {
+    checkStatus().then(function () { if (!S.linked) { S.token = ''; lsSet('ss_token', ''); } render(); }).catch(function () { gerr('Нет связи с сервером. Обновите страницу позже.'); });
+  }
+})();
+</script>
