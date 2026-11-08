@@ -30,7 +30,8 @@ body {
     radial-gradient(120% 38% at 105% -6%, rgba(230,182,90,.30), transparent 62%),
     radial-gradient(70% 30% at -10% 0%, rgba(47,224,111,.12), transparent 65%);
   background-repeat: no-repeat;
-  padding-block: 18px 34px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 34px);
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
