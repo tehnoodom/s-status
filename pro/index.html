@@ -208,6 +208,10 @@ svg { flex: none; }
     </section>
 
     <section class="card" id="cSend" aria-label="Отправка">
+      <div id="winBox" style="display:grid;gap:10px" hidden>
+        <p class="note">Раз в сутки откройте доставку: отправьте «+» в WhatsApp. Бот не ответит на него — это нужно, чтобы готовое видео дошло до вас.</p>
+        <a class="btn alt" id="winLink" href="#" target="_blank" rel="noopener">Открыть доставку в WhatsApp</a>
+      </div>
       <div id="sendBox" style="display:grid;gap:10px">
         <button class="btn" type="button" id="send" disabled>Обработать и отправить в WhatsApp</button>
         <p class="note" id="hint">Сначала выберите видео.</p>
@@ -243,7 +247,7 @@ svg { flex: none; }
   var BOT = '79667232167';
   var OWNER = '79280030778'; // подписку оформляет владелец лично
   var $ = function (s) { return document.querySelector(s); };
-  var S = { token: '', linked: false, plan: 'free', canSend: true, phone: '', file: null, phase: 'idle', pollT: 0, codeExp: 0, jobId: '', jobT: 0, finished: false };
+  var S = { window: true, del: BOT, winT: 0, token: '', linked: false, plan: 'free', canSend: true, phone: '', file: null, phase: 'idle', pollT: 0, codeExp: 0, jobId: '', jobT: 0, finished: false };
   var SVG = function (id, w, st) { return '<svg width="' + w + '" height="' + w + '" style="' + (st || '') + '"><use href="#' + id + '"/></svg>'; };
 
   function lsGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
@@ -292,20 +296,23 @@ svg { flex: none; }
     $('#subLink').href = 'https://wa.me/' + OWNER + '?text=' + encodeURIComponent('Здравствуйте! Хочу подписку S.status');
     show('#cSend', !done);
     show('#sendBox', !up);
+    show('#winBox', S.linked && paid && !S.window && !done && !up);
+    $('#winLink').href = 'https://wa.me/' + S.del + '?text=%2B';
     show('#progBox', up);
     show('#doneArea', done);
 
     var needSub = !paid;
-    $('#send').disabled = !S.file || up || !S.canSend || needSub;
+    $('#send').disabled = !S.file || up || !S.canSend || needSub || !S.window;
     $('#hint').textContent = !S.file ? 'Сначала выберите видео.'
       : !S.canSend ? 'Лимит исчерпан. Попробуйте позже или оформите подписку.'
       : needSub ? 'Нужна подписка. Нажмите «Оформить подписку».'
+      : !S.window ? 'Сначала откройте доставку: отправьте «+» в WhatsApp.'
       : 'Готовое видео придёт в ваш WhatsApp.';
   }
 
   function applyStatus(d) {
     S.linked = !!d.linked;
-    if (d.linked) { S.plan = d.plan || 'free'; S.canSend = d.canSend !== false; S.phone = d.phone || ''; }
+    if (d.linked) { S.plan = d.plan || 'free'; S.canSend = d.canSend !== false; S.phone = d.phone || ''; S.window = d.window !== false; if (d.wa) S.del = d.wa; }
   }
   function checkStatus() {
     if (!S.token) return Promise.resolve();
@@ -345,6 +352,16 @@ svg { flex: none; }
     broken: 'Загрузка прервалась. Попробуйте ещё раз.'
   };
 
+  function stopWin() { if (S.winT) { clearInterval(S.winT); S.winT = 0; } }
+  function startWin() {
+    stopWin();
+    var until = Date.now() + 10 * 60000;
+    S.winT = setInterval(function () {
+      if (Date.now() > until) { stopWin(); return; }
+      checkStatus().then(function () { if (S.window) { stopWin(); $('#sendErr').hidden = true; } render(); }).catch(function () {});
+    }, 3000);
+  }
+
   function stopJob() { if (S.jobT) { clearInterval(S.jobT); S.jobT = 0; } }
   function watchJob(id) {
     stopJob(); S.jobId = id; S.finished = false;
@@ -353,6 +370,7 @@ svg { flex: none; }
       if (Date.now() > until) { stopJob(); S.finished = true; render(); return; }
       api('GET', '/job?id=' + id).then(function (d) {
         if (d && d.ok && d.state === 'done') { stopJob(); S.finished = true; render(); }
+        if (d && d.ok && d.state === 'failed') { stopJob(); S.finished = false; S.phase = 'idle'; render(); $('#sendErr').textContent = 'Не получилось обработать это видео. Попытка не списана — попробуйте ещё раз или выберите другое видео.'; $('#sendErr').hidden = false; }
       }).catch(function () {});
     }, 3000);
   }
@@ -375,6 +393,7 @@ svg { flex: none; }
     x.onload = function () {
       var d = {}; try { d = JSON.parse(x.responseText); } catch (e) {}
       if (x.status === 200 && d.ok) { S.phase = 'done'; S.finished = false; if (d.id) watchJob(d.id); else S.finished = true; render(); window.scrollTo(0, 0); return; }
+      if (d.error === 'window') { S.window = false; S.phase = 'idle'; render(); startWin(); $('#sendErr').textContent = 'Сначала откройте доставку: отправьте «+» в WhatsApp, затем нажмите «Обработать» ещё раз.'; $('#sendErr').hidden = false; return; }
       if (d.error === 'not_linked') { S.linked = false; S.token = ''; lsSet('ssp_token', ''); S.file = null; S.phase = 'idle'; render(); gerr(ERR.not_linked); return; }
       fail(ERR[d.error] || 'Не получилось отправить. Попробуйте ещё раз.');
     };
@@ -387,6 +406,8 @@ svg { flex: none; }
   $('#reset').addEventListener('click', function () { S.file = null; $('#video').value = ''; render(); });
   document.querySelectorAll('input[name="variant"]').forEach(function (r) { r.addEventListener('change', render); });
   $('#send').addEventListener('click', upload);
+  $('#winLink').addEventListener('click', startWin);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && S.token && S.phase !== 'uploading') checkStatus().then(render).catch(function () {}); });
   $('#again').addEventListener('click', function () { stopJob(); S.finished = false; S.file = null; S.phase = 'idle'; $('#video').value = ''; checkStatus().catch(function () {}).then(render); });
 
   S.token = lsGet('ssp_token');
